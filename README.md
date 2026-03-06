@@ -2,7 +2,7 @@
 <html lang="no">
 <head>
 <meta charset="UTF-8">
-<title>Matte Spill – Skriv navn først</title>
+<title>Matte Spill – Klasse og Navn</title>
 <style>
 body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -31,7 +31,7 @@ body {
 }
 
 #board-list li {
-  font-size: 18px;
+  font-size: 16px;
   margin: 5px 0;
   color: #0a3d62;
 }
@@ -59,11 +59,12 @@ h1 {
 }
 
 #name-prompt input {
-  font-size: 24px;
-  padding: 8px;
-  margin-top: 10px;
+  font-size: 20px;
+  padding: 6px;
+  margin-top: 5px;
   border-radius: 8px;
   border: 2px solid #1e3799;
+  width: 200px;
 }
 
 #name-prompt button {
@@ -130,8 +131,10 @@ input.answer:focus {
   <h1>🎮 Matte Spill</h1>
 
   <div id="name-prompt">
+    <label for="class-name">Skriv inn klassen din:</label>
+    <input type="text" id="class-name" placeholder="F.eks. 10A">
     <label for="player-name">Skriv inn navnet ditt:</label>
-    <input type="text" id="player-name" placeholder="Navn">
+    <input type="text" id="player-name" placeholder="F.eks. Ola">
     <button onclick="startGame()">Start Spill</button>
   </div>
 
@@ -149,8 +152,9 @@ let num1, num2, correct;
 let maxMultiplier = 5;
 let gameOver = false;
 let playerName = "";
+let className = "";
 
-// Leaderboard fra localStorage
+// Hent leaderboard fra localStorage
 let leaderboard = JSON.parse(localStorage.getItem("mathLeaderboard")) || [];
 
 function renderLeaderboard() {
@@ -158,7 +162,7 @@ function renderLeaderboard() {
   if(leaderboard.length>10) leaderboard = leaderboard.slice(0,10);
   let listHTML = "";
   for(let p of leaderboard){
-    listHTML += `<li>${p.name}: ${p.score} poeng</li>`;
+    listHTML += `<li>${p.className} – ${p.name}: ${p.score} poeng</li>`;
   }
   document.getElementById("board-list").innerHTML = listHTML;
 }
@@ -183,11 +187,12 @@ function newQuestion(){
 }
 
 function saveScore(){
-  let existing = leaderboard.findIndex(p=>p.name===playerName);
+  // Sjekk om spilleren allerede har score
+  let existing = leaderboard.findIndex(p=>p.name===playerName && p.className===className);
   if(existing>-1){
     if(score>leaderboard[existing].score) leaderboard[existing].score = score;
   } else {
-    leaderboard.push({name: playerName, score: score});
+    leaderboard.push({name: playerName, className: className, score: score});
   }
   localStorage.setItem("mathLeaderboard", JSON.stringify(leaderboard));
   renderLeaderboard();
@@ -202,13 +207,17 @@ function restartGame(){
 }
 
 function startGame(){
+  className = document.getElementById("class-name").value.trim();
   playerName = document.getElementById("player-name").value.trim();
+  if(!className) className = "Ukjent";
   if(!playerName) playerName = "Anon";
+
   document.getElementById("name-prompt").style.display = "none";
   document.getElementById("round").style.display = "block";
   document.getElementById("score").style.display = "block";
   document.getElementById("question-box").style.display = "block";
   document.getElementById("answer").style.display = "block";
+
   newQuestion();
 }
 
