@@ -4,9 +4,6 @@
 <meta charset="UTF-8">
 <title>Matte Spill</title>
 
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js"></script>
-
 <style>
 
 body{
@@ -51,6 +48,17 @@ width:150px;
 margin:5px;
 }
 
+/* fjern piler */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button{
+-webkit-appearance:none;
+margin:0;
+}
+
+input[type=number]{
+-moz-appearance:textfield;
+}
+
 </style>
 </head>
 
@@ -69,9 +77,8 @@ margin:5px;
 
 <div id="leaderboard">
 
-<h3>🏫 Klasse Leaderboard</h3>
-
-<p id="best"></p>
+<h3>🥇 Beste i klassen</h3>
+<p id="best">Ingen score enda</p>
 
 </div>
 
@@ -83,7 +90,7 @@ margin:5px;
 
 <div id="oppgave"></div>
 
-<input id="svar" type="number">
+<input id="svar" type="number" placeholder="Svar">
 
 <p>Runde: <span id="runde">1</span></p>
 
@@ -91,32 +98,18 @@ margin:5px;
 
 <script>
 
-// LIM INN DIN FIREBASE CONFIG HER
-const firebaseConfig = {
-apiKey: "DIN_KEY",
-authDomain: "DIN_APP.firebaseapp.com",
-databaseURL: "https://DIN_APP-default-rtdb.firebaseio.com",
-projectId: "DIN_APP",
-storageBucket: "DIN_APP.appspot.com",
-messagingSenderId: "123456",
-appId: "APP_ID"
-}
-
-const app = firebase.initializeApp(firebaseConfig)
-const db = firebase.database()
-
 let klasse=""
 let navn=""
 let runde=1
 let riktig=0
+let timer=null
 
 function start(){
 
 klasse=document.getElementById("klasse").value.trim()
 navn=document.getElementById("navn").value.trim()
 
-if(!klasse||!navn){
-alert("Skriv klasse og navn")
+if(!klasse || !navn){
 return
 }
 
@@ -126,43 +119,59 @@ document.getElementById("leaderboard").style.display="block"
 
 document.getElementById("player").innerText=klasse+" - "+navn
 
-liveLeaderboard()
-
+visScore()
 nyOppgave()
 
 }
 
 function nyOppgave(){
 
-let a=Math.floor(Math.random()*5)+1
-let b=Math.floor(Math.random()*5)+1
+let a
+let b
+let symbol="+"
 
-if(runde>20){
-
+if(runde<=5){
+a=Math.floor(Math.random()*3)+1
+b=Math.floor(Math.random()*3)+1
+}
+else if(runde<=10){
 a=Math.floor(Math.random()*5)+1
 b=Math.floor(Math.random()*5)+1
+}
+else if(runde<=20){
+a=Math.floor(Math.random()*10)+1
+b=Math.floor(Math.random()*10)+1
+}
+else{
 
-riktig=a*b
+symbol="x"
 
-document.getElementById("oppgave").innerText=a+" x "+b
+let max=5
 
-}else{
-
-riktig=a+b
-
-document.getElementById("oppgave").innerText=a+" + "+b
+a=Math.floor(Math.random()*max)+1
+b=Math.floor(Math.random()*max)+1
 
 }
 
+if(symbol==="+") riktig=a+b
+else riktig=a*b
+
+document.getElementById("oppgave").innerText=a+" "+symbol+" "+b
 document.getElementById("svar").value=""
 
 }
 
 document.getElementById("svar").addEventListener("input",function(){
 
-if(this.value==="") return
+clearTimeout(timer)
 
-let svar=Number(this.value)
+let felt=this
+
+timer=setTimeout(function(){
+
+if(felt.value==="") return
+
+let svar=Number(felt.value)
 
 if(svar===riktig){
 
@@ -173,8 +182,6 @@ document.getElementById("runde").innerText=runde
 
 lagreScore()
 
-alert("Feil! Riktig var "+riktig)
-
 runde=1
 document.getElementById("runde").innerText=1
 
@@ -182,42 +189,45 @@ document.getElementById("runde").innerText=1
 
 nyOppgave()
 
+},400)
+
 })
 
 function lagreScore(){
 
-db.ref("leaderboard/"+klasse+"/"+navn).set({
+let lagret=JSON.parse(localStorage.getItem("bestScore")) || {}
+
+if(!lagret[klasse] || runde > lagret[klasse].score){
+
+lagret[klasse]={
+navn:navn,
 score:runde
-})
-
-}
-
-function liveLeaderboard(){
-
-db.ref("leaderboard/"+klasse).on("value",snap=>{
-
-let data=snap.val()
-
-if(!data) return
-
-let bestName=""
-let bestScore=0
-
-for(let n in data){
-
-if(data[n].score>bestScore){
-
-bestScore=data[n].score
-bestName=n
-
 }
 
 }
+
+localStorage.setItem("bestScore",JSON.stringify(lagret))
+
+visScore()
+
+}
+
+function visScore(){
+
+let lagret=JSON.parse(localStorage.getItem("bestScore")) || {}
+
+let best=lagret[klasse]
+
+if(best){
 
 document.getElementById("best").innerText=
-bestName+" - "+bestScore
+best.navn+" - "+best.score
 
-})
+}else{
+
+document.getElementById("best").innerText="Ingen score enda"
+
+}
 
 }
 
