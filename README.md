@@ -5,6 +5,7 @@
 <title>Matte Spill</title>
 
 <style>
+
 body{
 font-family:Arial;
 background:linear-gradient(135deg,#4facfe,#00f2fe);
@@ -56,6 +57,7 @@ margin:0;
 input[type=number]{
 -moz-appearance:textfield;
 }
+
 </style>
 </head>
 
@@ -87,7 +89,6 @@ let klasse=""
 let navn=""
 let runde=1
 let riktig=0
-let timer=null
 
 function start(){
 
@@ -104,6 +105,7 @@ document.getElementById("player").innerText=klasse+" - "+navn
 
 visScore()
 nyOppgave()
+
 }
 
 function nyOppgave(){
@@ -112,9 +114,7 @@ let a
 let b
 let symbol="+"
 
-/* Før runde 14 = pluss */
-
-if(runde <= 14){
+if(runde<=14){
 
 symbol="+"
 
@@ -133,11 +133,7 @@ b=Math.floor(Math.random()*10)+1
 
 riktig=a+b
 
-}
-
-/* Etter runde 14 = gange */
-
-else{
+}else{
 
 symbol="x"
 
@@ -160,32 +156,29 @@ riktig=a*b
 
 document.getElementById("oppgave").innerText=a+" "+symbol+" "+b+" = ?"
 document.getElementById("svar").value=""
+
 }
 
 document.getElementById("svar").addEventListener("input",function(){
 
-clearTimeout(timer)
+if(this.value==="") return
 
-let felt=this
-
-timer=setTimeout(function(){
-
-if(felt.value==="") return
-
-let svar=Number(felt.value)
+let svar=Number(this.value)
 
 if(svar===riktig){
+
 runde++
+
 }else{
+
 lagreScore()
 runde=1
+
 }
 
 document.getElementById("runde").innerText=runde
 
 nyOppgave()
-
-},2000)
 
 })
 
@@ -205,6 +198,7 @@ score:runde
 localStorage.setItem("bestScore",JSON.stringify(lagret))
 
 visScore()
+
 }
 
 function visScore(){
@@ -215,7 +209,7 @@ let best=lagret[klasse]
 
 if(best){
 
-document.getElementById("best").innerText=
+document.getElementById("best").innerText =
 best.navn+" - "+best.score
 
 }else{
@@ -227,5 +221,6 @@ document.getElementById("best").innerText="Ingen score enda"
 }
 
 </script>
+
 </body>
 </html>
