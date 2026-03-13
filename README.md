@@ -5,7 +5,6 @@
 <title>Matte Spill</title>
 
 <style>
-
 body{
 font-family:Arial;
 background:linear-gradient(135deg,#4facfe,#00f2fe);
@@ -37,7 +36,7 @@ text-align:center;
 }
 
 #oppgave{
-font-size:28px;
+font-size:32px;
 margin:20px 0;
 }
 
@@ -48,7 +47,6 @@ width:150px;
 margin:5px;
 }
 
-/* fjern piler */
 input::-webkit-outer-spin-button,
 input::-webkit-inner-spin-button{
 -webkit-appearance:none;
@@ -58,42 +56,29 @@ margin:0;
 input[type=number]{
 -moz-appearance:textfield;
 }
-
 </style>
 </head>
 
 <body>
 
 <div id="start">
-
 <h2>Start Spill</h2>
-
 <input id="klasse" placeholder="Klasse"><br>
 <input id="navn" placeholder="Navn"><br>
-
 <button onclick="start()">Start</button>
-
 </div>
 
 <div id="leaderboard">
-
 <h3>🥇 Beste i klassen</h3>
 <p id="best">Ingen score enda</p>
-
 </div>
 
 <div id="game">
-
 <h1>🧠 Matte Spill</h1>
-
 <p id="player"></p>
-
 <div id="oppgave"></div>
-
 <input id="svar" type="number" placeholder="Svar">
-
 <p>Runde: <span id="runde">1</span></p>
-
 </div>
 
 <script>
@@ -109,9 +94,7 @@ function start(){
 klasse=document.getElementById("klasse").value.trim()
 navn=document.getElementById("navn").value.trim()
 
-if(!klasse || !navn){
-return
-}
+if(!klasse || !navn) return
 
 document.getElementById("start").style.display="none"
 document.getElementById("game").style.display="block"
@@ -121,7 +104,6 @@ document.getElementById("player").innerText=klasse+" - "+navn
 
 visScore()
 nyOppgave()
-
 }
 
 function nyOppgave(){
@@ -129,6 +111,12 @@ function nyOppgave(){
 let a
 let b
 let symbol="+"
+
+/* Før runde 14 = pluss */
+
+if(runde <= 14){
+
+symbol="+"
 
 if(runde<=5){
 a=Math.floor(Math.random()*3)+1
@@ -138,27 +126,40 @@ else if(runde<=10){
 a=Math.floor(Math.random()*5)+1
 b=Math.floor(Math.random()*5)+1
 }
-else if(runde<=20){
+else{
 a=Math.floor(Math.random()*10)+1
 b=Math.floor(Math.random()*10)+1
 }
+
+riktig=a+b
+
+}
+
+/* Etter runde 14 = gange */
+
 else{
 
 symbol="x"
 
-let max=5
+if(runde<=20){
+a=Math.floor(Math.random()*3)+1
+b=Math.floor(Math.random()*3)+1
+}
+else if(runde<=40){
+a=Math.floor(Math.random()*6)+1
+b=Math.floor(Math.random()*6)+1
+}
+else{
+a=Math.floor(Math.random()*12)+1
+b=Math.floor(Math.random()*12)+1
+}
 
-a=Math.floor(Math.random()*max)+1
-b=Math.floor(Math.random()*max)+1
+riktig=a*b
 
 }
 
-if(symbol==="+") riktig=a+b
-else riktig=a*b
-
-document.getElementById("oppgave").innerText=a+" "+symbol+" "+b
+document.getElementById("oppgave").innerText=a+" "+symbol+" "+b+" = ?"
 document.getElementById("svar").value=""
-
 }
 
 document.getElementById("svar").addEventListener("input",function(){
@@ -174,22 +175,17 @@ if(felt.value==="") return
 let svar=Number(felt.value)
 
 if(svar===riktig){
-
 runde++
-document.getElementById("runde").innerText=runde
-
 }else{
-
 lagreScore()
-
 runde=1
-document.getElementById("runde").innerText=1
-
 }
+
+document.getElementById("runde").innerText=runde
 
 nyOppgave()
 
-},400)
+},2000)
 
 })
 
@@ -209,7 +205,6 @@ score:runde
 localStorage.setItem("bestScore",JSON.stringify(lagret))
 
 visScore()
-
 }
 
 function visScore(){
@@ -232,6 +227,5 @@ document.getElementById("best").innerText="Ingen score enda"
 }
 
 </script>
-
 </body>
 </html>
