@@ -2,249 +2,226 @@
 <html lang="no">
 <head>
 <meta charset="UTF-8">
-<title>Matte Spill – Klasse og Navn</title>
+<title>Matte Spill</title>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js"></script>
+
 <style>
-body {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background: linear-gradient(to bottom right, #a1c4fd, #c2e9fb);
-  margin: 0;
-  display: flex;
-  height: 100vh;
+
+body{
+font-family:Arial;
+background:linear-gradient(135deg,#4facfe,#00f2fe);
+height:100vh;
+display:flex;
+justify-content:center;
+align-items:center;
+gap:30px;
+margin:0;
 }
 
-#sidebar {
-  width: 250px;
-  background: #ffffffcc;
-  padding: 20px;
-  box-shadow: 5px 0 15px rgba(0,0,0,0.2);
-  overflow-y: auto;
+#start,#game,#leaderboard{
+background:white;
+padding:30px;
+border-radius:15px;
+box-shadow:0 10px 25px rgba(0,0,0,0.2);
 }
 
-#sidebar h2 {
-  text-align: center;
-  color: #1e3799;
+#game{
+display:none;
+text-align:center;
+width:300px;
 }
 
-#board-list {
-  list-style: none;
-  padding-left: 0;
+#leaderboard{
+display:none;
+width:200px;
+text-align:center;
 }
 
-#board-list li {
-  font-size: 16px;
-  margin: 5px 0;
-  color: #0a3d62;
+#oppgave{
+font-size:28px;
+margin:20px 0;
 }
 
-#game-area {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;
-  padding-top: 50px;
+input{
+padding:10px;
+font-size:18px;
+width:150px;
+margin:5px;
 }
 
-h1 {
-  font-size: 48px;
-  color: #0a3d62;
-  text-shadow: 2px 2px #d6e6ff;
-  margin-bottom: 5px;
-}
-
-#name-prompt {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-#name-prompt input {
-  font-size: 20px;
-  padding: 6px;
-  margin-top: 5px;
-  border-radius: 8px;
-  border: 2px solid #1e3799;
-  width: 200px;
-}
-
-#name-prompt button {
-  font-size: 20px;
-  padding: 6px 12px;
-  margin-top: 10px;
-  border-radius: 8px;
-  border: none;
-  background-color: #1e3799;
-  color: white;
-  cursor: pointer;
-}
-
-#round, #score {
-  font-size: 24px;
-  color: #1e3799;
-  margin-bottom: 10px;
-}
-
-#question-box {
-  background: #ffffffaa;
-  padding: 40px 60px;
-  border-radius: 15px;
-  box-shadow: 0 10px 20px rgba(0,0,0,0.2);
-  font-size: 36px;
-  margin-bottom: 20px;
-  min-width: 200px;
-  text-align: center;
-}
-
-input.answer {
-  font-size: 28px;
-  padding: 10px 15px;
-  width: 150px;
-  text-align: center;
-  border: 2px solid #1e3799;
-  border-radius: 10px;
-  outline: none;
-  transition: 0.2s;
-}
-
-input.answer:focus {
-  border-color: #3c40c6;
-  box-shadow: 0 0 10px #3c40c6aa;
-}
-
-#result {
-  font-size: 24px;
-  height: 30px;
-  margin-top: 20px;
-  color: #0a3d62;
-  font-weight: bold;
-}
 </style>
 </head>
+
 <body>
 
-<div id="sidebar">
-  <h2>Leaderboard</h2>
-  <ol id="board-list"></ol>
+<div id="start">
+
+<h2>Start Spill</h2>
+
+<input id="klasse" placeholder="Klasse"><br>
+<input id="navn" placeholder="Navn"><br>
+
+<button onclick="start()">Start</button>
+
 </div>
 
-<div id="game-area">
-  <h1>🎮 Matte Spill</h1>
+<div id="leaderboard">
 
-  <div id="name-prompt">
-    <label for="class-name">Skriv inn klassen din:</label>
-    <input type="text" id="class-name" placeholder="F.eks. 10A">
-    <label for="player-name">Skriv inn navnet ditt:</label>
-    <input type="text" id="player-name" placeholder="F.eks. Ola">
-    <button onclick="startGame()">Start Spill</button>
-  </div>
+<h3>🏫 Klasse Leaderboard</h3>
 
-  <div id="round" style="display:none;">Runde: 1</div>
-  <div id="score" style="display:none;">Poeng: 0</div>
-  <div id="question-box" style="display:none;"></div>
-  <input type="number" id="answer" class="answer" placeholder="Skriv svaret" style="display:none;">
-  <div id="result"></div>
+<p id="best"></p>
+
+</div>
+
+<div id="game">
+
+<h1>🧠 Matte Spill</h1>
+
+<p id="player"></p>
+
+<div id="oppgave"></div>
+
+<input id="svar" type="number">
+
+<p>Runde: <span id="runde">1</span></p>
+
 </div>
 
 <script>
-let round = 1;
-let score = 0;
-let num1, num2, correct;
-let maxMultiplier = 5;
-let gameOver = false;
-let playerName = "";
-let className = "";
 
-// Hent leaderboard fra localStorage
-let leaderboard = JSON.parse(localStorage.getItem("mathLeaderboard")) || [];
-
-function renderLeaderboard() {
-  leaderboard.sort((a,b)=>b.score-a.score);
-  if(leaderboard.length>10) leaderboard = leaderboard.slice(0,10);
-  let listHTML = "";
-  for(let p of leaderboard){
-    listHTML += `<li>${p.className} – ${p.name}: ${p.score} poeng</li>`;
-  }
-  document.getElementById("board-list").innerHTML = listHTML;
+// LIM INN DIN FIREBASE CONFIG HER
+const firebaseConfig = {
+apiKey: "DIN_KEY",
+authDomain: "DIN_APP.firebaseapp.com",
+databaseURL: "https://DIN_APP-default-rtdb.firebaseio.com",
+projectId: "DIN_APP",
+storageBucket: "DIN_APP.appspot.com",
+messagingSenderId: "123456",
+appId: "APP_ID"
 }
 
-function newQuestion(){
-  if(gameOver) return;
-  if(round <= 20){
-    num1 = Math.floor(Math.random()*5)+1;
-    num2 = Math.floor(Math.random()*5)+1;
-    correct = num1 + num2;
-    document.getElementById("question-box").textContent = `${num1} + ${num2} = ?`;
-  } else {
-    num1 = Math.floor(Math.random()*maxMultiplier)+1;
-    num2 = Math.floor(Math.random()*maxMultiplier)+1;
-    correct = num1 * num2;
-    document.getElementById("question-box").textContent = `${num1} × ${num2} = ?`;
-  }
-  document.getElementById("round").textContent = `Runde: ${round}`;
-  document.getElementById("score").textContent = `Poeng: ${score}`;
-  document.getElementById("answer").value = "";
-  document.getElementById("answer").focus();
+const app = firebase.initializeApp(firebaseConfig)
+const db = firebase.database()
+
+let klasse=""
+let navn=""
+let runde=1
+let riktig=0
+
+function start(){
+
+klasse=document.getElementById("klasse").value.trim()
+navn=document.getElementById("navn").value.trim()
+
+if(!klasse||!navn){
+alert("Skriv klasse og navn")
+return
 }
 
-function saveScore(){
-  // Sjekk om spilleren allerede har score
-  let existing = leaderboard.findIndex(p=>p.name===playerName && p.className===className);
-  if(existing>-1){
-    if(score>leaderboard[existing].score) leaderboard[existing].score = score;
-  } else {
-    leaderboard.push({name: playerName, className: className, score: score});
-  }
-  localStorage.setItem("mathLeaderboard", JSON.stringify(leaderboard));
-  renderLeaderboard();
+document.getElementById("start").style.display="none"
+document.getElementById("game").style.display="block"
+document.getElementById("leaderboard").style.display="block"
+
+document.getElementById("player").innerText=klasse+" - "+navn
+
+liveLeaderboard()
+
+nyOppgave()
+
 }
 
-function restartGame(){
-  round = 1;
-  score = 0;
-  maxMultiplier = 5;
-  gameOver = false;
-  newQuestion();
+function nyOppgave(){
+
+let a=Math.floor(Math.random()*5)+1
+let b=Math.floor(Math.random()*5)+1
+
+if(runde>20){
+
+a=Math.floor(Math.random()*5)+1
+b=Math.floor(Math.random()*5)+1
+
+riktig=a*b
+
+document.getElementById("oppgave").innerText=a+" x "+b
+
+}else{
+
+riktig=a+b
+
+document.getElementById("oppgave").innerText=a+" + "+b
+
 }
 
-function startGame(){
-  className = document.getElementById("class-name").value.trim();
-  playerName = document.getElementById("player-name").value.trim();
-  if(!className) className = "Ukjent";
-  if(!playerName) playerName = "Anon";
+document.getElementById("svar").value=""
 
-  document.getElementById("name-prompt").style.display = "none";
-  document.getElementById("round").style.display = "block";
-  document.getElementById("score").style.display = "block";
-  document.getElementById("question-box").style.display = "block";
-  document.getElementById("answer").style.display = "block";
-
-  newQuestion();
 }
 
-document.getElementById("answer").addEventListener("input", function(){
-  if(gameOver) return;
-  let user = Number(this.value);
-  if(user===correct){
-    score++;
-    round++;
-    if(round>20 && score%5===0) maxMultiplier = Math.min(maxMultiplier+1,12);
-    document.getElementById("result").textContent = "✅ Riktig!";
-    setTimeout(()=>{
-      document.getElementById("result").textContent = "";
-      newQuestion();
-    },500);
-  } else if(this.value!==""){
-    gameOver = true;
-    document.getElementById("result").textContent = `❌ Feil! Spillet er over, poeng: ${score}`;
-    saveScore();
-    setTimeout(()=>{
-      restartGame();
-      document.getElementById("result").textContent = "";
-    },1500);
-  }
-});
+document.getElementById("svar").addEventListener("input",function(){
 
-renderLeaderboard();
+if(this.value==="") return
+
+let svar=Number(this.value)
+
+if(svar===riktig){
+
+runde++
+document.getElementById("runde").innerText=runde
+
+}else{
+
+lagreScore()
+
+alert("Feil! Riktig var "+riktig)
+
+runde=1
+document.getElementById("runde").innerText=1
+
+}
+
+nyOppgave()
+
+})
+
+function lagreScore(){
+
+db.ref("leaderboard/"+klasse+"/"+navn).set({
+score:runde
+})
+
+}
+
+function liveLeaderboard(){
+
+db.ref("leaderboard/"+klasse).on("value",snap=>{
+
+let data=snap.val()
+
+if(!data) return
+
+let bestName=""
+let bestScore=0
+
+for(let n in data){
+
+if(data[n].score>bestScore){
+
+bestScore=data[n].score
+bestName=n
+
+}
+
+}
+
+document.getElementById("best").innerText=
+bestName+" - "+bestScore
+
+})
+
+}
+
 </script>
+
 </body>
 </html>
