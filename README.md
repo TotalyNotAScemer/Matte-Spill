@@ -4,8 +4,10 @@
 <meta charset="UTF-8">
 <title>Matte Spill</title>
 
-<style>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 
+<style>
 body{
 font-family:Arial;
 background:linear-gradient(135deg,#4facfe,#00f2fe);
@@ -32,8 +34,7 @@ width:300px;
 
 #leaderboard{
 display:none;
-width:200px;
-text-align:center;
+width:220px;
 }
 
 #oppgave{
@@ -57,7 +58,6 @@ margin:0;
 input[type=number]{
 -moz-appearance:textfield;
 }
-
 </style>
 </head>
 
@@ -71,19 +71,34 @@ input[type=number]{
 </div>
 
 <div id="leaderboard">
-<h3>🥇 Beste i klassen</h3>
-<p id="best">Ingen score enda</p>
+<h3>🏫 Klasse Leaderboard</h3>
+<ol id="scores"></ol>
 </div>
 
 <div id="game">
 <h1>🧠 Matte Spill</h1>
 <p id="player"></p>
 <div id="oppgave"></div>
-<input id="svar" type="number" placeholder="Svar">
+<input id="svar" type="number">
 <p>Runde: <span id="runde">1</span></p>
 </div>
 
 <script>
+
+/* LIM INN DIN FIREBASE CONFIG HER */
+
+const firebaseConfig = {
+apiKey:"DIN_KEY",
+authDomain:"DIN_APP.firebaseapp.com",
+databaseURL:"https://DIN_APP-default-rtdb.firebaseio.com",
+projectId:"DIN_APP",
+storageBucket:"DIN_APP.appspot.com",
+messagingSenderId:"123",
+appId:"APP_ID"
+}
+
+firebase.initializeApp(firebaseConfig)
+const db = firebase.database()
 
 let klasse=""
 let navn=""
@@ -103,7 +118,8 @@ document.getElementById("leaderboard").style.display="block"
 
 document.getElementById("player").innerText=klasse+" - "+navn
 
-visScore()
+liveLeaderboard()
+
 nyOppgave()
 
 }
@@ -118,18 +134,8 @@ if(runde<=14){
 
 symbol="+"
 
-if(runde<=5){
-a=Math.floor(Math.random()*3)+1
-b=Math.floor(Math.random()*3)+1
-}
-else if(runde<=10){
-a=Math.floor(Math.random()*5)+1
-b=Math.floor(Math.random()*5)+1
-}
-else{
 a=Math.floor(Math.random()*10)+1
 b=Math.floor(Math.random()*10)+1
-}
 
 riktig=a+b
 
@@ -137,24 +143,14 @@ riktig=a+b
 
 symbol="x"
 
-if(runde<=20){
-a=Math.floor(Math.random()*3)+1
-b=Math.floor(Math.random()*3)+1
-}
-else if(runde<=40){
-a=Math.floor(Math.random()*6)+1
-b=Math.floor(Math.random()*6)+1
-}
-else{
-a=Math.floor(Math.random()*12)+1
-b=Math.floor(Math.random()*12)+1
-}
+a=Math.floor(Math.random()*10)+1
+b=Math.floor(Math.random()*10)+1
 
 riktig=a*b
 
 }
 
-document.getElementById("oppgave").innerText=a+" "+symbol+" "+b+" = ?"
+document.getElementById("oppgave").innerText=a+" "+symbol+" "+b
 document.getElementById("svar").value=""
 
 }
@@ -172,6 +168,7 @@ runde++
 }else{
 
 lagreScore()
+
 runde=1
 
 }
@@ -184,39 +181,41 @@ nyOppgave()
 
 function lagreScore(){
 
-let lagret=JSON.parse(localStorage.getItem("bestScore")) || {}
-
-if(!lagret[klasse] || runde > lagret[klasse].score){
-
-lagret[klasse]={
-navn:navn,
+db.ref("leaderboard/"+klasse+"/"+navn).set({
 score:runde
-}
+})
 
 }
 
-localStorage.setItem("bestScore",JSON.stringify(lagret))
+function liveLeaderboard(){
 
-visScore()
+db.ref("leaderboard/"+klasse).on("value",snap=>{
 
-}
+let data=snap.val()
 
-function visScore(){
+if(!data) return
 
-let lagret=JSON.parse(localStorage.getItem("bestScore")) || {}
+let arr=[]
 
-let best=lagret[klasse]
+for(let n in data){
 
-if(best){
-
-document.getElementById("best").innerText =
-best.navn+" - "+best.score
-
-}else{
-
-document.getElementById("best").innerText="Ingen score enda"
+arr.push({navn:n,score:data[n].score})
 
 }
+
+arr.sort((a,b)=>b.score-a.score)
+
+arr=arr.slice(0,10)
+
+let html=""
+
+arr.forEach(s=>{
+html+="<li>"+s.navn+" - "+s.score+"</li>"
+})
+
+document.getElementById("scores").innerHTML=html
+
+})
 
 }
 
